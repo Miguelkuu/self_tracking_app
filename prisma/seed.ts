@@ -20,6 +20,39 @@ async function main() {
   }
 
   console.log(`Seeded ${categories.length} categories.`);
+
+  const subjects = [
+    { name: "Math", color: "#3b82f6" },
+    { name: "Science", color: "#22c55e" },
+    { name: "History", color: "#eab308" },
+  ];
+
+  for (const subject of subjects) {
+    await prisma.subject.upsert({
+      where: { name: subject.name },
+      update: {},
+      create: subject,
+    });
+  }
+
+  console.log(`Seeded ${subjects.length} subjects.`);
+
+  const exerciseCategories = [
+    { name: "Push", color: "#f97316" },
+    { name: "Pull", color: "#3b82f6" },
+    { name: "Legs", color: "#22c55e" },
+    { name: "Cardio", color: "#ef4444" },
+  ];
+
+  for (const category of exerciseCategories) {
+    await prisma.exerciseCategory.upsert({
+      where: { name: category.name },
+      update: {},
+      create: category,
+    });
+  }
+
+  console.log(`Seeded ${exerciseCategories.length} exercise categories.`);
 }
 
 main().catch((e) => {

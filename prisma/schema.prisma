@@ -14,25 +14,26 @@ datasource db {
 
 model Account {
   id              String        @id @default(cuid())
-  name            String    
+  name            String
   startingBalance Decimal       @default(0) @db.Decimal(12, 2)
   archived        Boolean       @default(false)
   createdAt       DateTime      @default(now())
   transactions    Transaction[]
+  bills           Bill[]
 }
 
 enum CategoryKind {
   INCOME
-  EXPENSE 
+  EXPENSE
 }
 
 model Category {
-  id            String        @id @default(cuid())
-  name          String
-  kind          CategoryKind
-  color         String        @default("#64748b")
-  archived      Boolean       @default(false)
-  transactions  Transaction[]
+  id           String        @id @default(cuid())
+  name         String
+  kind         CategoryKind
+  color        String        @default("#64748b")
+  archived     Boolean       @default(false)
+  transactions Transaction[]
 
   @@unique([name, kind])
 }
@@ -48,12 +49,139 @@ model Transaction {
   amount      Decimal         @db.Decimal(12, 2)
   date        DateTime
   description String
-  notes       String
+  notes       String?
   accountId   String
   account     Account         @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  categoryId  String
-  category    Category       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryId  String?
+  category    Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   createdAt   DateTime        @default(now())
 
   @@index([date])
+}
+
+enum BillRecurrence {
+  MONTHLY
+  WEEKLY
+  YEARLY
+  ONE_TIME
+}
+
+model Bill {
+  id            String         @id @default(cuid())
+  name          String
+  category      String?
+  recurrence    BillRecurrence @default(MONTHLY)
+  amount        Decimal?       @db.Decimal(12, 2)
+  dueDayOfMonth Int?
+  dueDate       DateTime?
+  autopay       Boolean        @default(false)
+  accountId     String?
+  account       Account?       @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  notes         String?
+  archived      Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  payments      BillPayment[]
+}
+
+model BillPayment {
+  id          String    @id @default(cuid())
+  billId      String
+  bill        Bill      @relation(fields: [billId], references: [id], onDelete: Cascade)
+  periodLabel String
+  dueDate     DateTime
+  amount      Decimal   @db.Decimal(12, 2)
+  paid        Boolean   @default(false)
+  paidDate    DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@unique([billId, periodLabel])
+  @@index([dueDate])
+  @@index([paid])
+}
+
+model Subject {
+  id          String       @id @default(cuid())
+  name        String       @unique
+  color       String       @default("#3b82f6")
+  archived    Boolean      @default(false)
+  assignments Assignment[]
+}
+
+enum AssignmentType {
+  HOMEWORK
+  TEST
+  PROJECT
+  OTHER
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model Assignment {
+  id        String         @id @default(cuid())
+  subjectId String
+  subject   Subject        @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  title     String
+  type      AssignmentType @default(HOMEWORK)
+  dueDate   DateTime
+  done      Boolean        @default(false)
+  doneAt    DateTime?
+  priority  Priority       @default(MEDIUM)
+  notes     String?
+  createdAt DateTime       @default(now())
+
+  @@index([dueDate])
+  @@index([done])
+}
+
+model ExerciseCategory {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  color     String     @default("#f97316")
+  exercises Exercise[]
+}
+
+model Exercise {
+  id         String            @id @default(cuid())
+  name       String            @unique
+  categoryId String?
+  category   ExerciseCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  archived   Boolean           @default(false)
+  sets       WorkoutSet[]
+}
+
+model WorkoutSession {
+  id        String       @id @default(cuid())
+  date      DateTime     @default(now())
+  name      String?
+  notes     String?
+  createdAt DateTime     @default(now())
+  sets      WorkoutSet[]
+
+  @@index([date])
+}
+
+enum WeightUnit {
+  KG
+  LB
+}
+
+model WorkoutSet {
+  id               String         @id @default(cuid())
+  workoutSessionId String
+  workoutSession   WorkoutSession @relation(fields: [workoutSessionId], references: [id], onDelete: Cascade)
+  exerciseId       String
+  exercise         Exercise       @relation(fields: [exerciseId], references: [id], onDelete: Restrict)
+  setNumber        Int
+  reps             Int
+  weight           Decimal        @db.Decimal(6, 2)
+  weightUnit       WeightUnit     @default(KG)
+  notes            String?
+  createdAt        DateTime       @default(now())
+
+  @@index([exerciseId])
+  @@index([workoutSessionId])
 }
