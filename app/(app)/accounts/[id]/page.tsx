@@ -1,16 +1,20 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
+import { ChevronDown, ChevronLeft } from "lucide-react";
 import { prisma } from "@/lib/db";
+import { cn } from "@/lib/utils";
 import {
+  accountsHref,
   getAccountBalances,
   getSpendingByCategory,
   parseRange,
+  rangeChips,
   rangeStart,
   RANGES,
+  UNCATEGORIZED,
 } from "@/lib/accounts";
 import { SpendingDonut } from "@/components/finance/spending-donut";
-import { RangeFilter } from "@/components/finance/range-filter";
+import { FilterChips } from "@/components/finance/filter-chips";
 import { TransactionList } from "@/components/finance/transaction-list";
 import { AccountFormDialog } from "@/components/finance/account-form-dialog";
 
@@ -30,34 +34,76 @@ export default async function AccountDetailPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { id } = await params;
-  const range = parseRange((await searchParams).range);
+  const query = await searchParams;
+  const range = parseRange(query.range);
+  const category = typeof query.category === "string" && query.category ? query.category : null;
   const from = rangeStart(range);
+  const path = `/accounts/${id}`;
 
-  const [[account], spending, transactions] = await Promise.all([
-    getAccountBalances([id]),
-    getSpendingByCategory({ accountId: id, from }),
+  const [accounts, spending, transactions] = await Promise.all([
+    getAccountBalances(),
+    getSpendingByCategory({ accountId: id, from, keep: category ?? undefined }),
     prisma.transaction.findMany({
-      where: { accountId: id, date: from ? { gte: from } : undefined },
+      where: {
+        accountId: id,
+        date: from ? { gte: from } : undefined,
+        ...(category === UNCATEGORIZED
+          ? { categoryId: null, isTransfer: false }
+          : category
+            ? { category: { name: category } }
+            : {}),
+      },
       include: { account: true, category: true },
       orderBy: [{ date: "desc" }, { createdAt: "desc" }],
       take: MAX_TRANSACTIONS,
     }),
   ]);
 
+  // Archived accounts aren't in the switcher list but can still be opened.
+  const account =
+    accounts.find((a) => a.id === id) ?? (await getAccountBalances([id]))[0];
   if (!account) notFound();
+  // Keep the chosen category visible even when this account has no spending
+  // in it, so it's clear why the list is empty.
+  const categoryOptions =
+    category && !spending.all.some((c) => c.name === category)
+      ? [...spending.all, { name: category, amount: 0 }]
+      : spending.all;
+
   const isCard = account.type === "CREDIT_CARD";
   const loan = account.loan;
   const owes = isCard || loan !== null;
 
   return (
     <div className="space-y-6">
-      <Link
-        href={`/accounts?range=${range}`}
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ChevronLeft className="h-4 w-4" />
-        Accounts
-      </Link>
+      <div className="space-y-2">
+        <Link
+          href={`/accounts?range=${range}`}
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Accounts
+        </Link>
+        <nav aria-label="Switch account" className="flex gap-2 overflow-x-auto pb-1">
+          {accounts.map((a) => (
+            <Link
+              key={a.id}
+              href={accountsHref(`/accounts/${a.id}`, { range, category })}
+              scroll={false}
+              aria-current={a.id === id ? "page" : undefined}
+              className={cn(
+                "shrink-0 rounded-md border px-3 py-1.5 text-left transition-colors",
+                a.id === id ? "border-foreground bg-muted" : "hover:bg-muted/50"
+              )}
+            >
+              <span className="block max-w-40 truncate text-xs text-muted-foreground">
+                {a.name}
+              </span>
+              <span className="block text-sm font-semibold">{money(a.balance)}</span>
+            </Link>
+          ))}
+        </nav>
+      </div>
 
       <div className="flex items-start justify-between gap-3">
         <div>
@@ -114,26 +160,59 @@ export default async function AccountDetailPage({
         </Link>
       )}
 
-      <RangeFilter basePath={`/accounts/${id}`} current={range} />
+      <div className="space-y-2">
+        <FilterChips label="Date range" chips={rangeChips(path, range, category)} />
+        {!loan && categoryOptions.length > 0 && (
+          <FilterChips
+            label="Category"
+            chips={[
+              {
+                key: "all",
+                label: "All categories",
+                href: accountsHref(path, { range }),
+                active: category === null,
+              },
+              ...categoryOptions.map((c) => ({
+                key: c.name,
+                label: c.name,
+                href: accountsHref(path, { range, category: c.name === category ? null : c.name }),
+                active: c.name === category,
+              })),
+            ]}
+          />
+        )}
+      </div>
 
       {!loan && (
         <section className="rounded-md border p-4">
           <h2 className="mb-3 font-semibold">Spending · {RANGES[range]}</h2>
-          <SpendingDonut slices={spending.slices} total={spending.total} size={200} />
+          <SpendingDonut
+            slices={spending.slices}
+            total={spending.total}
+            size={200}
+            selected={category}
+            linkBase={accountsHref(path, { range })}
+          />
         </section>
       )}
 
-      <section>
-        <h2 className="mb-2 font-semibold">
-          Transactions · {RANGES[range]}
-          <span className="ml-2 text-sm font-normal text-muted-foreground">
-            {transactions.length === MAX_TRANSACTIONS
-              ? `latest ${MAX_TRANSACTIONS}`
-              : transactions.length}
+      {/* Keyed by category so picking one re-opens the list. */}
+      <details key={category ?? ""} open={category !== null} className="group rounded-md border">
+        <summary className="flex cursor-pointer list-none items-center justify-between p-3 font-medium hover:bg-muted/30 [&::-webkit-details-marker]:hidden">
+          <span>
+            Transactions · {category ?? RANGES[range]}
+            <span className="ml-2 text-sm font-normal text-muted-foreground">
+              {transactions.length === MAX_TRANSACTIONS
+                ? `latest ${MAX_TRANSACTIONS}`
+                : transactions.length}
+            </span>
           </span>
-        </h2>
-        <TransactionList transactions={transactions} showAccount={false} />
-      </section>
+          <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
+        </summary>
+        <div className="border-t p-3">
+          <TransactionList transactions={transactions} showAccount={false} />
+        </div>
+      </details>
     </div>
   );
 }

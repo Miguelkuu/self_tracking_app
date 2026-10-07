@@ -4,11 +4,12 @@ import {
   getAccountBalances,
   getSpendingByCategory,
   parseRange,
+  rangeChips,
   rangeStart,
   RANGES,
 } from "@/lib/accounts";
 import { SpendingDonut } from "@/components/finance/spending-donut";
-import { RangeFilter } from "@/components/finance/range-filter";
+import { FilterChips } from "@/components/finance/filter-chips";
 
 const money = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD" });
 
@@ -56,7 +57,7 @@ export default async function AccountsOverviewPage({
             <p className="text-4xl font-bold">{money(totalBalance)}</p>
           </div>
 
-          <RangeFilter basePath="/accounts" current={range} />
+          <FilterChips label="Date range" chips={rangeChips("/accounts", range)} />
 
           <section className="rounded-md border p-4">
             <h2 className="mb-3 font-semibold">Spending · {RANGES[range]}</h2>
@@ -65,18 +66,17 @@ export default async function AccountsOverviewPage({
 
           <section className="grid gap-3 lg:grid-cols-2">
             {accounts.map((account, i) => (
-              <Link
-                key={account.id}
-                href={`/accounts/${account.id}?range=${range}`}
-                className="rounded-md border p-4 transition-colors hover:bg-muted/30"
-              >
-                <div className="mb-3 flex items-start justify-between gap-2">
+              <div key={account.id} className="rounded-md border p-4">
+                <Link
+                  href={`/accounts/${account.id}?range=${range}`}
+                  className="-m-2 mb-1 flex items-start justify-between gap-2 rounded-md p-2 transition-colors hover:bg-muted/30"
+                >
                   <div>
                     <p className="text-sm text-muted-foreground">{account.name}</p>
                     <p className="text-xl font-bold">{money(account.balance)}</p>
                   </div>
                   <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                </div>
+                </Link>
                 {account.loan ? (
                   <p className="text-sm text-muted-foreground">
                     {money(account.loan.monthlyPayment)}/month ·{" "}
@@ -91,9 +91,10 @@ export default async function AccountsOverviewPage({
                     slices={perAccount[i].slices}
                     total={perAccount[i].total}
                     size={130}
+                    linkBase={`/accounts/${account.id}?range=${range}`}
                   />
                 )}
-              </Link>
+              </div>
             ))}
           </section>
         </>

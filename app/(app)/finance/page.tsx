@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChevronDown } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { getAccountBalances } from "@/lib/accounts";
 import { AddTransactionDialog } from "@/components/finance/add-transaction-dialog";
@@ -64,7 +65,20 @@ export default async function FinancePage() {
         </div>
       )}
 
-      <TransactionList transactions={transactions} />
+      <details className="group rounded-md border">
+        <summary className="flex cursor-pointer list-none items-center justify-between p-3 font-medium hover:bg-muted/30 [&::-webkit-details-marker]:hidden">
+          <span>
+            Recent transactions
+            <span className="ml-2 text-sm font-normal text-muted-foreground">
+              {transactions.length}
+            </span>
+          </span>
+          <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
+        </summary>
+        <div className="border-t p-3">
+          <TransactionList transactions={transactions} />
+        </div>
+      </details>
     </div>
   );
 }

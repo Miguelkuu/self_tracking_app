@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Pie, PieChart, Tooltip } from "recharts";
 import type { SpendingSlice } from "@/lib/accounts";
 import { cn } from "@/lib/utils";
@@ -13,8 +15,12 @@ const SLOT_COLORS = [
   "var(--series-5)",
 ];
 
+// Kept in sync with OTHER in lib/accounts (importing it would pull Prisma
+// into the browser bundle).
+const OTHER = "Other";
+
 function colorFor(slice: SpendingSlice, index: number) {
-  return slice.name === "Other" ? "var(--series-other)" : SLOT_COLORS[index];
+  return slice.name === OTHER ? "var(--series-other)" : SLOT_COLORS[index];
 }
 
 const money = (n: number) =>
@@ -24,18 +30,38 @@ export function SpendingDonut({
   slices,
   total,
   size = 200,
+  selected,
+  linkBase,
   className,
 }: {
   slices: SpendingSlice[];
   total: number;
   size?: number;
+  // The highlighted category, if any.
+  selected?: string | null;
+  // When set, slices and legend rows link to `${linkBase}&category=<name>`
+  // (clicking the selected one again clears it). "Other" isn't a single
+  // category, so it never links.
+  linkBase?: string;
   className?: string;
 }) {
+  const router = useRouter();
+
   if (slices.length === 0) {
     return <p className="text-sm text-muted-foreground">No spending in this period.</p>;
   }
 
-  const data = slices.map((s, i) => ({ ...s, fill: colorFor(s, i) }));
+  const hrefFor = (name: string) => {
+    if (!linkBase || name === OTHER) return null;
+    return name === selected ? linkBase : `${linkBase}&category=${encodeURIComponent(name)}`;
+  };
+
+  const data = slices.map((s, i) => ({
+    ...s,
+    fill: colorFor(s, i),
+    fillOpacity: selected && s.name !== selected ? 0.3 : 1,
+  }));
+  const selectedSlice = slices.find((s) => s.name === selected);
 
   return (
     <div className={cn("flex flex-col gap-4 sm:flex-row sm:items-center", className)}>
@@ -52,6 +78,11 @@ export function SpendingDonut({
             stroke="var(--background)"
             strokeWidth={2}
             isAnimationActive={false}
+            className={linkBase ? "cursor-pointer" : undefined}
+            onClick={(entry: { name?: string }) => {
+              const href = entry.name ? hrefFor(entry.name) : null;
+              if (href) router.push(href, { scroll: false });
+            }}
           />
           <Tooltip
             content={({ active, payload }) => {
@@ -68,26 +99,46 @@ export function SpendingDonut({
             }}
           />
         </PieChart>
-        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-xs text-muted-foreground">Spent</span>
-          <span className="text-sm font-bold">{money(total)}</span>
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
+          <span className="max-w-full truncate text-xs text-muted-foreground">
+            {selectedSlice ? selectedSlice.name : "Spent"}
+          </span>
+          <span className="text-sm font-bold">{money(selectedSlice?.amount ?? total)}</span>
         </div>
       </div>
 
       <ul className="min-w-0 flex-1 space-y-1 text-sm">
-        {data.map((slice) => (
-          <li key={slice.name} className="flex items-center gap-2">
-            <span
-              className="h-2.5 w-2.5 shrink-0 rounded-full"
-              style={{ backgroundColor: slice.fill }}
-            />
-            <span className="min-w-0 flex-1 truncate">{slice.name}</span>
-            <span className="tabular-nums text-muted-foreground">
-              {Math.round((slice.amount / total) * 100)}%
-            </span>
-            <span className="w-20 text-right tabular-nums">{money(slice.amount)}</span>
-          </li>
-        ))}
+        {data.map((slice) => {
+          const href = hrefFor(slice.name);
+          const row = (
+            <>
+              <span
+                className="h-2.5 w-2.5 shrink-0 rounded-full"
+                style={{ backgroundColor: slice.fill, opacity: slice.fillOpacity }}
+              />
+              <span className="min-w-0 flex-1 truncate">{slice.name}</span>
+              <span className="tabular-nums text-muted-foreground">
+                {Math.round((slice.amount / total) * 100)}%
+              </span>
+              <span className="w-20 text-right tabular-nums">{money(slice.amount)}</span>
+            </>
+          );
+          const rowClass = cn(
+            "flex items-center gap-2 rounded-md px-1 py-0.5",
+            slice.name === selected && "bg-muted font-medium"
+          );
+          return (
+            <li key={slice.name}>
+              {href ? (
+                <Link href={href} scroll={false} className={cn(rowClass, "hover:bg-muted/50")}>
+                  {row}
+                </Link>
+              ) : (
+                <div className={rowClass}>{row}</div>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
