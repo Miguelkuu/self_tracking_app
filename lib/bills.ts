@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { BillRecurrence } from "@/lib/generated/prisma/client";
 
-function computeCurrentPeriod(bill: {
+export function computeCurrentPeriod(bill: {
   recurrence: BillRecurrence;
   dueDayOfMonth: number | null;
   dueDate: Date | null;

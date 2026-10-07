@@ -51,7 +51,16 @@ export function AddBillDialog({ accounts }: { accounts: Account[] }) {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="recurrence">Recurrence</Label>
-              <Select name="recurrence" defaultValue="MONTHLY">
+              <Select
+                name="recurrence"
+                defaultValue="MONTHLY"
+                items={{
+                  MONTHLY: "Monthly",
+                  WEEKLY: "Weekly",
+                  YEARLY: "Yearly",
+                  ONE_TIME: "One time",
+                }}
+              >
                 <SelectTrigger id="recurrence" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
@@ -94,7 +103,10 @@ export function AddBillDialog({ accounts }: { accounts: Account[] }) {
           {accounts.length > 0 && (
             <div className="space-y-2">
               <Label htmlFor="accountId">Account (optional)</Label>
-              <Select name="accountId">
+              <Select
+                name="accountId"
+                items={accounts.map((account) => ({ value: account.id, label: account.name }))}
+              >
                 <SelectTrigger id="accountId" className="w-full">
                   <SelectValue placeholder="No account" />
                 </SelectTrigger>

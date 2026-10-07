@@ -47,7 +47,11 @@ export function AddTransactionDialog({
         <form action={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="kind">Type</Label>
-            <Select name="kind" defaultValue="EXPENSE">
+            <Select
+              name="kind"
+              defaultValue="EXPENSE"
+              items={{ EXPENSE: "Expense", INCOME: "Income" }}
+            >
               <SelectTrigger id="kind" className="w-full">
                 <SelectValue />
               </SelectTrigger>
@@ -76,7 +80,11 @@ export function AddTransactionDialog({
 
           <div className="space-y-2">
             <Label htmlFor="accountId">Account</Label>
-            <Select name="accountId" defaultValue={accounts[0]?.id}>
+            <Select
+              name="accountId"
+              defaultValue={accounts[0]?.id}
+              items={accounts.map((account) => ({ value: account.id, label: account.name }))}
+            >
               <SelectTrigger id="accountId" className="w-full">
                 <SelectValue placeholder="Select account" />
               </SelectTrigger>
@@ -92,7 +100,10 @@ export function AddTransactionDialog({
 
           <div className="space-y-2">
             <Label htmlFor="categoryId">Category (optional)</Label>
-            <Select name="categoryId">
+            <Select
+              name="categoryId"
+              items={categories.map((category) => ({ value: category.id, label: category.name }))}
+            >
               <SelectTrigger id="categoryId" className="w-full">
                 <SelectValue placeholder="No category" />
               </SelectTrigger>

@@ -25,7 +25,11 @@ export function AddSetForm({
       <input type="hidden" name="workoutSessionId" value={workoutSessionId} />
       <div className="space-y-2">
         <Label htmlFor="exerciseId">Exercise</Label>
-        <Select name="exerciseId" defaultValue={exercises[0]?.id}>
+        <Select
+          name="exerciseId"
+          defaultValue={exercises[0]?.id}
+          items={exercises.map((exercise) => ({ value: exercise.id, label: exercise.name }))}
+        >
           <SelectTrigger id="exerciseId" className="w-full">
             <SelectValue placeholder="Select exercise" />
           </SelectTrigger>
@@ -49,7 +53,7 @@ export function AddSetForm({
         </div>
         <div className="space-y-2">
           <Label htmlFor="weightUnit">Unit</Label>
-          <Select name="weightUnit" defaultValue="LB">
+          <Select name="weightUnit" defaultValue="LB" items={{ LB: "lb", KG: "kg" }}>
             <SelectTrigger id="weightUnit" className="w-full">
               <SelectValue />
             </SelectTrigger>

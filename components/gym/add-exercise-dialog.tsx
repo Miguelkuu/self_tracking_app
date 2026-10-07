@@ -43,7 +43,10 @@ export function AddExerciseDialog({ categories }: { categories: ExerciseCategory
           </div>
           <div className="space-y-2">
             <Label htmlFor="categoryId">Category (optional)</Label>
-            <Select name="categoryId">
+            <Select
+              name="categoryId"
+              items={categories.map((category) => ({ value: category.id, label: category.name }))}
+            >
               <SelectTrigger id="categoryId" className="w-full">
                 <SelectValue placeholder="No category" />
               </SelectTrigger>

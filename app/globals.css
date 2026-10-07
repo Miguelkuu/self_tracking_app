@@ -127,4 +127,16 @@
   html {
     @apply font-sans;
   }
+
+  /* Chromium bakes its own padding/margin into the date input's text
+     segments and calendar icon, which fights with our own input padding
+     and makes the control look lopsided. Zero those out so the visible
+     spacing on both sides comes only from the input's own padding. */
+  input[type="date"]::-webkit-datetime-edit {
+    padding: 0;
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    margin: 0;
+    padding: 0;
+  }
 }

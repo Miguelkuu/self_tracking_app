@@ -13,7 +13,11 @@ export default async function DashboardPage() {
 
   const [upcomingBills, upcomingAssignments, weekSessions, accounts] = await Promise.all([
     prisma.billPayment.findMany({
-      where: { paid: false, dueDate: { lte: weekFromNow } },
+      where: {
+        paid: false,
+        dueDate: { lte: weekFromNow },
+        bill: { archived: false },
+      },
       include: { bill: true },
       orderBy: { dueDate: "asc" },
       take: 10,

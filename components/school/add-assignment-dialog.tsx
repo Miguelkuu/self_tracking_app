@@ -46,7 +46,11 @@ export function AddAssignmentDialog({ subjects }: { subjects: Subject[] }) {
 
           <div className="space-y-2">
             <Label htmlFor="subjectId">Subject</Label>
-            <Select name="subjectId" defaultValue={subjects[0]?.id}>
+            <Select
+              name="subjectId"
+              defaultValue={subjects[0]?.id}
+              items={subjects.map((subject) => ({ value: subject.id, label: subject.name }))}
+            >
               <SelectTrigger id="subjectId" className="w-full">
                 <SelectValue placeholder="Select subject" />
               </SelectTrigger>
@@ -63,7 +67,16 @@ export function AddAssignmentDialog({ subjects }: { subjects: Subject[] }) {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="type">Type</Label>
-              <Select name="type" defaultValue="HOMEWORK">
+              <Select
+                name="type"
+                defaultValue="HOMEWORK"
+                items={{
+                  HOMEWORK: "Homework",
+                  TEST: "Test",
+                  PROJECT: "Project",
+                  OTHER: "Other",
+                }}
+              >
                 <SelectTrigger id="type" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
@@ -77,7 +90,11 @@ export function AddAssignmentDialog({ subjects }: { subjects: Subject[] }) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="priority">Priority</Label>
-              <Select name="priority" defaultValue="MEDIUM">
+              <Select
+                name="priority"
+                defaultValue="MEDIUM"
+                items={{ LOW: "Low", MEDIUM: "Medium", HIGH: "High" }}
+              >
                 <SelectTrigger id="priority" className="w-full">
                   <SelectValue />
                 </SelectTrigger>

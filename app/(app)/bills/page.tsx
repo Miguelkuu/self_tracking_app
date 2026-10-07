@@ -2,12 +2,23 @@ import { prisma } from "@/lib/db";
 import { ensureUpcomingBillPayments } from "@/lib/bills";
 import { AddBillDialog } from "@/components/bills/add-bill-dialog";
 import { PaidCheckbox } from "@/components/bills/paid-checkbox";
+import { EditBillDialog } from "@/components/bills/edit-bill-dialog";
+import { DeleteBillButton } from "@/components/bills/delete-bill-button";
+import { PastPaymentsToggle } from "@/components/bills/hide-paid-toggle";
 
-export default async function BillsPage() {
+export default async function BillsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ hidePaid?: string }>;
+}) {
   await ensureUpcomingBillPayments();
+
+  const { hidePaid: hidePaidParam } = await searchParams;
+  const hidePaid = hidePaidParam !== "0";
 
   const [payments, accounts] = await Promise.all([
     prisma.billPayment.findMany({
+      where: { bill: { archived: false }, ...(hidePaid ? { paid: false } : {}) },
       include: { bill: true },
       orderBy: { dueDate: "asc" },
     }),
@@ -24,9 +35,13 @@ export default async function BillsPage() {
         <AddBillDialog accounts={accounts} />
       </div>
 
+      <div className="mb-4">
+        <PastPaymentsToggle hidePaid={hidePaid} />
+      </div>
+
       {payments.length === 0 ? (
         <p className="text-muted-foreground">
-          No bills yet. Add one to start tracking due dates.
+          {hidePaid ? "No unpaid bills. Nice." : "No bills yet. Add one to start tracking due dates."}
         </p>
       ) : (
         <ul className="space-y-2">
@@ -60,7 +75,11 @@ export default async function BillsPage() {
                     </p>
                   </div>
                 </div>
-                <span className="font-medium">${Number(payment.amount).toFixed(2)}</span>
+                <div className="flex items-center gap-1">
+                  <span className="font-medium">${Number(payment.amount).toFixed(2)}</span>
+                  <EditBillDialog bill={payment.bill} accounts={accounts} />
+                  <DeleteBillButton billId={payment.bill.id} billName={payment.bill.name} />
+                </div>
               </li>
             );
           })}

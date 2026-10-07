@@ -27,6 +27,15 @@ export default async function FinancePage() {
         <AddTransactionDialog accounts={accounts} categories={categories} />
       </div>
 
+      <div className="mb-4 flex gap-4 text-sm">
+        <Link href="/finance/accounts" className="underline text-muted-foreground">
+          Manage accounts
+        </Link>
+        <Link href="/finance/categories" className="underline text-muted-foreground">
+          Manage categories
+        </Link>
+      </div>
+
       {accounts.length === 0 ? (
         <p className="text-muted-foreground">
           Create an account first on the{" "}
