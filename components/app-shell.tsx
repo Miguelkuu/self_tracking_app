@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Wallet,
+  Landmark,
   Receipt,
   GraduationCap,
   Dumbbell,
@@ -17,10 +18,16 @@ import { ThemeToggle } from "@/components/theme-toggle";
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/finance", label: "Finance", icon: Wallet },
+  { href: "/accounts", label: "Accounts", icon: Landmark },
   { href: "/bills", label: "Bills", icon: Receipt },
   { href: "/school", label: "School", icon: GraduationCap },
   { href: "/gym", label: "Gym", icon: Dumbbell },
 ];
+
+// Sub-pages (e.g. /accounts/123) keep their section's tab highlighted.
+function isActivePath(pathname: string, href: string) {
+  return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
+}
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -34,7 +41,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
         <nav className="flex flex-1 flex-col gap-1">
           {NAV_ITEMS.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = isActivePath(pathname, item.href);
             return (
               <Link
                 key={item.href}
@@ -83,7 +90,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <nav className="fixed inset-x-0 bottom-0 flex border-t bg-background md:hidden">
         {NAV_ITEMS.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = isActivePath(pathname, item.href);
           return (
             <Link
               key={item.href}

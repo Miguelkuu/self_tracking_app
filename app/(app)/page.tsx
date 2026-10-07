@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { ensureUpcomingBillPayments } from "@/lib/bills";
+import { getAccountBalances } from "@/lib/accounts";
 
 export default async function DashboardPage() {
   await ensureUpcomingBillPayments();
@@ -31,19 +32,10 @@ export default async function DashboardPage() {
     prisma.workoutSession.count({
       where: { date: { gte: startOfWeek } },
     }),
-    prisma.account.findMany({
-      where: { archived: false },
-      include: { transactions: true },
-    }),
+    getAccountBalances(),
   ]);
 
-  const totalBalance = accounts.reduce((sum, account) => {
-    const balance = account.transactions.reduce((total, t) => {
-      const amount = Number(t.amount);
-      return t.kind === "INCOME" ? total + amount : total - amount;
-    }, Number(account.startingBalance));
-    return sum + balance;
-  }, 0);
+  const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
 
   return (
     <div className="space-y-6">

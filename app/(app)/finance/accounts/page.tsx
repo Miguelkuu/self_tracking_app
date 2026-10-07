@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { AddAccountDialog } from "@/components/finance/add-account-dialog";
+import { AccountFormDialog } from "@/components/finance/account-form-dialog";
 
 export default async function AccountsPage() {
   const accounts = await prisma.account.findMany({
@@ -11,7 +11,7 @@ export default async function AccountsPage() {
     <div>
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Accounts</h1>
-        <AddAccountDialog />
+        <AccountFormDialog />
       </div>
 
       {accounts.length === 0 ? (
