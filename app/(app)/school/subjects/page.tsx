@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { AddSubjectDialog } from "@/components/school/add-subject-dialog";
+import { SubjectColorPicker } from "@/components/school/subject-color-picker";
 
 export default async function SubjectsPage() {
   const subjects = await prisma.subject.findMany({
@@ -23,9 +24,10 @@ export default async function SubjectsPage() {
               key={subject.id}
               className="flex items-center gap-3 rounded-md border p-3"
             >
-              <span
-                className="h-3 w-3 rounded-full"
-                style={{ backgroundColor: subject.color }}
+              <SubjectColorPicker
+                subjectId={subject.id}
+                name={subject.name}
+                color={subject.color}
               />
               <span className="font-medium">{subject.name}</span>
             </li>

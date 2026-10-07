@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronDown, ChevronLeft } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { cn } from "@/lib/utils";
 import {
@@ -16,6 +16,7 @@ import {
 import { SpendingDonut } from "@/components/finance/spending-donut";
 import { FilterChips } from "@/components/finance/filter-chips";
 import { TransactionList } from "@/components/finance/transaction-list";
+import { CollapsibleSection } from "@/components/collapsible-section";
 import { AccountFormDialog } from "@/components/finance/account-form-dialog";
 
 const fmtDate = (d: Date) =>
@@ -197,22 +198,16 @@ export default async function AccountDetailPage({
       )}
 
       {/* Keyed by category so picking one re-opens the list. */}
-      <details key={category ?? ""} open={category !== null} className="group rounded-md border">
-        <summary className="flex cursor-pointer list-none items-center justify-between p-3 font-medium hover:bg-muted/30 [&::-webkit-details-marker]:hidden">
-          <span>
-            Transactions · {category ?? RANGES[range]}
-            <span className="ml-2 text-sm font-normal text-muted-foreground">
-              {transactions.length === MAX_TRANSACTIONS
-                ? `latest ${MAX_TRANSACTIONS}`
-                : transactions.length}
-            </span>
-          </span>
-          <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
-        </summary>
-        <div className="border-t p-3">
-          <TransactionList transactions={transactions} showAccount={false} />
-        </div>
-      </details>
+      <CollapsibleSection
+        key={category ?? ""}
+        defaultOpen={category !== null}
+        title={`Transactions · ${category ?? RANGES[range]}`}
+        count={
+          transactions.length === MAX_TRANSACTIONS ? `latest ${MAX_TRANSACTIONS}` : transactions.length
+        }
+      >
+        <TransactionList transactions={transactions} showAccount={false} />
+      </CollapsibleSection>
     </div>
   );
 }

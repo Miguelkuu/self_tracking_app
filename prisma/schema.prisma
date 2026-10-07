@@ -150,17 +150,19 @@ enum Priority {
 }
 
 model Assignment {
-  id        String         @id @default(cuid())
-  subjectId String
-  subject   Subject        @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  title     String
-  type      AssignmentType @default(HOMEWORK)
-  dueDate   DateTime
-  done      Boolean        @default(false)
-  doneAt    DateTime?
-  priority  Priority       @default(MEDIUM)
-  notes     String?
-  createdAt DateTime       @default(now())
+  id         String         @id @default(cuid())
+  subjectId  String
+  subject    Subject        @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  title      String
+  type       AssignmentType @default(HOMEWORK)
+  dueDate    DateTime
+  done       Boolean        @default(false)
+  doneAt     DateTime?
+  priority   Priority       @default(MEDIUM)
+  notes      String?
+  // UID from the school calendar feed; null for assignments added by hand.
+  externalId String?        @unique
+  createdAt  DateTime       @default(now())
 
   @@index([dueDate])
   @@index([done])
@@ -213,4 +215,25 @@ model WorkoutSet {
 
   @@index([exerciseId])
   @@index([workoutSessionId])
+}
+
+// Class meetings and other timed events from the school calendar feed.
+// Fully replaced on every sync, so nothing here is edited by hand.
+model ClassEvent {
+  id       String   @id @default(cuid())
+  uid      String   @unique // feed UID + start time (recurring events repeat UIDs)
+  title    String
+  subject  String?
+  location String?
+  start    DateTime
+  end      DateTime
+  allDay   Boolean  @default(false)
+
+  @@index([start])
+}
+
+// Small app-wide settings (e.g. the school calendar feed URL).
+model Setting {
+  key   String @id
+  value String
 }

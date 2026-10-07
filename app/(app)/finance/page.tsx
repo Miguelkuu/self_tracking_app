@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { ChevronDown } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { getAccountBalances } from "@/lib/accounts";
 import { AddTransactionDialog } from "@/components/finance/add-transaction-dialog";
 import { TransactionList } from "@/components/finance/transaction-list";
+import { CollapsibleSection } from "@/components/collapsible-section";
 
 export default async function FinancePage() {
   const [accounts, balances, categories, transactions] = await Promise.all([
@@ -65,20 +65,9 @@ export default async function FinancePage() {
         </div>
       )}
 
-      <details className="group rounded-md border">
-        <summary className="flex cursor-pointer list-none items-center justify-between p-3 font-medium hover:bg-muted/30 [&::-webkit-details-marker]:hidden">
-          <span>
-            Recent transactions
-            <span className="ml-2 text-sm font-normal text-muted-foreground">
-              {transactions.length}
-            </span>
-          </span>
-          <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
-        </summary>
-        <div className="border-t p-3">
-          <TransactionList transactions={transactions} />
-        </div>
-      </details>
+      <CollapsibleSection title="Recent transactions" count={transactions.length}>
+        <TransactionList transactions={transactions} />
+      </CollapsibleSection>
     </div>
   );
 }

@@ -4,6 +4,9 @@ import type { LucideIcon } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { ensureUpcomingBillPayments } from "@/lib/bills";
 import { getAccountBalances } from "@/lib/accounts";
+import { getFeedStatus, syncSchoolFeedIfStale } from "@/lib/school-feed";
+import { SchoolCalendar } from "@/components/school/school-calendar";
+import { daysAround, getCalendarData } from "@/lib/school-calendar";
 
 const money = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD" });
 
@@ -72,7 +75,7 @@ function MoneyBox({
 }
 
 export default async function DashboardPage() {
-  await ensureUpcomingBillPayments();
+  await Promise.all([ensureUpcomingBillPayments(), syncSchoolFeedIfStale()]);
 
   const now = new Date();
   const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -80,7 +83,7 @@ export default async function DashboardPage() {
   startOfWeek.setDate(now.getDate() - now.getDay());
   startOfWeek.setHours(0, 0, 0, 0);
 
-  const [upcomingBills, upcomingAssignments, weekSessions, lastSession, accounts] =
+  const [upcomingBills, calendar, feed, weekSessions, lastSession, accounts] =
     await Promise.all([
       prisma.billPayment.findMany({
         where: {
@@ -92,12 +95,10 @@ export default async function DashboardPage() {
         orderBy: { dueDate: "asc" },
         take: 10,
       }),
-      prisma.assignment.findMany({
-        where: { done: false, dueDate: { lte: weekFromNow } },
-        include: { subject: true },
-        orderBy: { dueDate: "asc" },
-        take: 10,
-      }),
+      // Wide enough to cover this week + next in any timezone; the calendar
+      // picks the exact 14 days in the browser.
+      getCalendarData(...daysAround(8, 16)),
+      getFeedStatus(),
       prisma.workoutSession.count({
         where: { date: { gte: startOfWeek } },
       }),
@@ -129,30 +130,19 @@ export default async function DashboardPage() {
       </Block>
 
       <Block title="School" icon={GraduationCap} href="/school">
-        {upcomingAssignments.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nothing due in the next 7 days.</p>
-        ) : (
-          <ul className="space-y-2">
-            {upcomingAssignments.map((assignment) => {
-              const overdue = assignment.dueDate < now;
-              return (
-                <li
-                  key={assignment.id}
-                  className="flex items-center justify-between rounded-md border p-3"
-                >
-                  <div>
-                    <p className="font-medium">{assignment.title}</p>
-                    <p className={overdue ? "text-xs text-red-600" : "text-xs text-muted-foreground"}>
-                      {assignment.subject.name} · Due {assignment.dueDate.toLocaleDateString()}
-                      {overdue ? " (overdue)" : ""}
-                    </p>
-                  </div>
-                  <span className="text-xs text-muted-foreground">{assignment.type}</span>
-                </li>
-              );
-            })}
-          </ul>
+        {!feed.connected && (
+          <p className="mb-3 text-sm text-muted-foreground">
+            Connect your class calendar feed on the{" "}
+            <Link href="/school" className="underline">
+              School
+            </Link>{" "}
+            page to fill this in automatically.
+          </p>
         )}
+        {feed.error && (
+          <p className="mb-3 text-sm text-red-600">Calendar sync failed: {feed.error}</p>
+        )}
+        <SchoolCalendar assignments={calendar.assignments} classes={calendar.classes} />
       </Block>
 
       <Block title="Bills due soon" icon={Receipt} href="/bills">

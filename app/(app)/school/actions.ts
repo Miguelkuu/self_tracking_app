@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { AssignmentType, Priority } from "@/lib/generated/prisma/client";
+import { applySchoolFeed, setFeedUrl, syncSchoolFeed } from "@/lib/school-feed";
 
 const createAssignmentSchema = z.object({
   subjectId: z.string().min(1, "Subject is required"),
@@ -39,5 +40,52 @@ export async function toggleAssignmentDone(assignmentId: string, done: boolean) 
   });
 
   revalidatePath("/school");
+  revalidatePath("/");
+}
+
+const feedUrlSchema = z
+  .string()
+  .trim()
+  .regex(/^(https?|webcal):\/\//i, "Paste the full calendar link (starts with https:// or webcal://)");
+
+export async function connectSchoolFeed(formData: FormData) {
+  await setFeedUrl(feedUrlSchema.parse(formData.get("url")));
+  await syncSchoolFeed();
+  revalidatePath("/school");
+  revalidatePath("/");
+}
+
+export async function syncSchoolFeedNow() {
+  await syncSchoolFeed();
+  revalidatePath("/school");
+  revalidatePath("/");
+}
+
+export async function disconnectSchoolFeed() {
+  await setFeedUrl(null);
+  revalidatePath("/school");
+  revalidatePath("/");
+}
+
+export async function importSchoolFeedFile(icsText: string) {
+  try {
+    const result = await applySchoolFeed(z.string().min(1).parse(icsText));
+    revalidatePath("/school");
+    revalidatePath("/");
+    return { ok: true as const, ...result };
+  } catch (error) {
+    return {
+      ok: false as const,
+      error: error instanceof Error ? error.message : "Couldn't read that file",
+    };
+  }
+}
+
+export async function updateSubjectColor(subjectId: string, color: string) {
+  await prisma.subject.update({
+    where: { id: subjectId },
+    data: { color: z.string().regex(/^#[0-9a-f]{6}$/i).parse(color) },
+  });
+  revalidatePath("/school", "layout");
   revalidatePath("/");
 }
