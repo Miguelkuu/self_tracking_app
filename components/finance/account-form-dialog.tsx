@@ -103,7 +103,7 @@ export function AccountFormDialog({ account }: { account?: EditableAccount }) {
               id="name"
               name="name"
               defaultValue={account?.name}
-              placeholder={isLoan ? "Affirm – Corsair" : "Checking"}
+              placeholder={isLoan ? "Affirm – Laptop" : "Checking"}
               required
             />
           </div>
@@ -234,7 +234,7 @@ export function AccountFormDialog({ account }: { account?: EditableAccount }) {
                   step="0.01"
                   min="0"
                   defaultValue={account?.apr ?? ""}
-                  placeholder="26.74"
+                  placeholder="24.99"
                 />
               </div>
               <div className="space-y-2">

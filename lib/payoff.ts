@@ -5,7 +5,7 @@ export type Card = {
   id: string;
   name: string;
   owed: number;
-  apr: number; // percent, e.g. 26.74
+  apr: number; // percent, e.g. 24.99
   minFloor: number; // the card's fixed minimum, e.g. $35
 };
 

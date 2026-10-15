@@ -44,10 +44,13 @@ const INTERNAL_TRANSFER_PATTERNS = [
 // Checked before BofA's own category, first match wins. BofA gets some of
 // these wrong (vending machines as Groceries, subscriptions as Dining).
 const KEYWORD_CATEGORIES: [RegExp, string][] = [
-  [/CANTEEN VENDING/i, "Snacks"],
-  [/ANTHROPIC|HULU|HBOMAX|PLAYSTATION|APPLE\.COM\/BILL|STEAM GAMES/i, "Subscriptions"],
-  [/LA FITNESS/i, "Gym"],
-  [/TOLLWAY|ITR CONCESSION|SKYWAY CONCESSIONS/i, "Tolls"],
+  [/VENDING/i, "Snacks"],
+  [
+    /NETFLIX|SPOTIFY|HULU|HBOMAX|DISNEY ?PLUS|YOUTUBE|PLAYSTATION|XBOX|STEAM GAMES|APPLE\.COM\/BILL|ANTHROPIC|OPENAI/i,
+    "Subscriptions",
+  ],
+  [/FITNESS|\bGYM\b/i, "Gym"],
+  [/\bTOLL/i, "Tolls"],
   [/^Zelle payment to/i, "Zelle sent"],
   [/^Zelle payment from/i, "Zelle received"],
 ];

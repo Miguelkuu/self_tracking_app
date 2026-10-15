@@ -25,7 +25,7 @@ model Account {
   name            String
   type            AccountType   @default(OTHER)
   // Credit card / loan details, used by the payoff planner. APR is a percentage
-  // (26.74 = 26.74%); minPayment is a card's fixed minimum floor (e.g. $35).
+  // (24.99 = 24.99%); minPayment is a card's fixed minimum floor (e.g. $35).
   apr             Decimal?      @db.Decimal(5, 2)
   creditLimit     Decimal?      @db.Decimal(12, 2)
   minPayment      Decimal?      @db.Decimal(12, 2)
@@ -39,7 +39,7 @@ model Account {
   archived        Boolean       @default(false)
   createdAt       DateTime      @default(now())
   // The bank's name for this account in CSV exports (e.g. "Bank of America -
-  // Bank - Safe Balance Banking"), remembered so imports can auto-map it.
+  // Bank - Checking"), remembered so imports can auto-map it.
   importName      String?       @unique
   transactions    Transaction[]
   bills           Bill[]

@@ -45,3 +45,5 @@ next-env.d.ts
 
 # bank exports contain personal financial data
 *.csv
+# calendar exports can contain private class/feed details
+*.ics
